@@ -65,30 +65,38 @@ export default function Page() {
     }
     setSubmitting(true);
     setSubmitted(null);
-
+  
+    // Pull UTM values from your existing memo (rename keys for the API)
+    const payload = {
+      email,
+      full_name: name,
+      country,
+      referral_code: referral,
+      consent,
+      utm_source: utm["utm_source"] || "",
+      utm_medium: utm["utm_medium"] || "",
+      utm_campaign: utm["utm_campaign"] || "",
+      utm_content: utm["utm_content"] || "",
+      utm_term: utm["utm_term"] || "",
+    };
+  
     try {
-      const res = await fetch(FORM_ENDPOINT, {
+      const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          full_name: name,
-          country,
-          referral_code: referral,
-          consent,
-          ...utm,
-          created_at: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Form submit failed");
-      setSubmitted({ ok: true, message: "You're on the list! We'll email you soon." });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Submit failed");
+      setSubmitted({ ok: true, message: "You're on the list! Check your inbox." });
       setEmail(""); setName(""); setCountry(""); setReferral(""); setConsent(false);
-    } catch (e) {
+    } catch (err) {
       setSubmitted({ ok: false, message: "Couldn't save your signup. Please try again." });
     } finally {
       setSubmitting(false);
     }
   }
+  
 
   const Modal = ({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
